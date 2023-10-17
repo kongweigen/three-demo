@@ -19,11 +19,21 @@ function generateQuadrantCollection(minx, maxx, miny, maxy) {
   return list;
 }
 
+// const coordinateList = [
+//   { x: 25, y: 25 },
+//   { x: 25, y: -25 },
+//   { x: -25, y: 25 },
+//   { x: -25, y: -25 },
+// ]
 const coordinateList = [
-  { x: 250, y: 250 },
-  { x: 250, y: -250 },
-  { x: -250, y: 250 },
-  { x: -250, y: -250 },
+  { x: 125, y: 250 },
+  { x: 125, y: 125 },
+  { x: 125, y: -125 },
+  { x: 125, y: -250 },
+  { x: -125, y: 125 },
+  { x: -125, y: 250 },
+  { x: -125, y: -125 },
+  { x: -125, y: -250 },
 ]
 
 export { generateQuadrantCollection, coordinateList }

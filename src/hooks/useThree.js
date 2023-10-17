@@ -1,53 +1,60 @@
 import { onMounted, ref } from 'vue'
 import * as THREE from 'three'
 import { generateQuadrantCollection, coordinateList } from '@/utils'
-// import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader'
 
 export const useThree = () => {
   const dataDialogRef = ref()
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(
-    100,
+    60,
     window.innerWidth / window.innerHeight,
-    0.1,
+    1,
     2000
   )
 
   const renderer = new THREE.WebGLRenderer({ alpha: true })
   renderer.shadowMap.enabled = true // 开启阴影
+  // 轨道控制器
   new OrbitControls(camera, renderer.domElement)
   renderer.setSize(window.innerWidth, window.innerHeight)
 
   onMounted(() => {
     box.appendChild(renderer.domElement)
     // 创建坐标轴对象 蓝色z轴 红色 x 绿色y
-    const axes = new THREE.AxesHelper(5)
+    const axes = new THREE.AxesHelper(100)
     //将坐标轴添加进场景
     scene.add(axes)
 
     // 创建几何体
-    const boxGeometry = new THREE.BoxGeometry(250, 250, 250)
-    const boxMaterial = new THREE.MeshStandardMaterial({ color: '#ffffff' })
-    coordinateList.forEach((t, index) => {
-      const cube = new THREE.Mesh(boxGeometry, boxMaterial)
-      cube.userData.isHouse = true;
-      // 为每个子网格设置 userData 属性
-      cube.userData.$id = index;
-      cube.userData.color = cube.material.color.clone()
-      cube.material = cube.material.clone()
+    // const boxGeometry = new THREE.BoxGeometry(250, 250, 250)
+    // const boxMaterial = new THREE.MeshStandardMaterial({ color: '#ffffff' })
+    // coordinateList.forEach((t, index) => {
+    //   const cube = new THREE.Mesh(boxGeometry, boxMaterial)
+    //   cube.userData.isHouse = true;
+    //   // 为每个子网格设置 userData 属性
+    //   cube.userData.$id = index;
+    //   cube.userData.color = cube.material.color.clone()
+    //   cube.material = cube.material.clone()
 
-      cube.position.set(t.x, 125, t.y)
-      scene.add(cube)
-    })
+    //   cube.position.set(t.x, 125, t.y)
+    //   scene.add(cube)
+    // })
 
 
     // 创建一个平面作为地面
-    const texture = new THREE.TextureLoader().load('src/assets/group.jpg'); // 纹理加载器
-    const geometry = new THREE.PlaneGeometry(1000, 1000);  //平面
+    const texture = new THREE.TextureLoader().load('src/assets/group.jpg', () => {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(15, 15);
+    }); // 纹理加载器
+    const geometry = new THREE.PlaneGeometry(3000, 3000);  //平面
     const material = new THREE.MeshPhongMaterial({ map: texture, side: THREE.DoubleSide });
-
     const ground = new THREE.Mesh(geometry, material);
+
+    // rotation 旋转欧拉角 Math.PI 就是 180 度
     ground.rotation.x = - Math.PI / 2; // 使地面水平放置
     ground.material.map.repeat.set(1, 1); // uv两个方向纹理重复数量
     ground.material.map.wrapS = THREE.RepeatWrapping;
@@ -57,37 +64,68 @@ export const useThree = () => {
     scene.add(ground);
 
 
+    // 雾气
+    scene.fog = new THREE.FogExp2('#879cba', 0.002);
+
+    // 创建环境
+    const rgbeLoader = new RGBELoader()
+    // const rgbeLoader = new THREE.CubeTextureLoader()
+    rgbeLoader.load('/src/assets/HdrSky.hdr', (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping
+      scene.background = texture
+      scene.environment = texture
+    })
+
+    // const sg = new THREE.SphereGeometry(1000, 60, 60)
+    // sg.scale(1, 1, -1)
+    // const sm = new THREE.MeshBasicMaterial({
+    //   map: new THREE.TextureLoader().load("/src/assets/HdrSky.hdr")
+    // })
+    // const sky = new THREE.Mesh(sg, sm)
+    // scene.add(sky)
+
 
     // 创建一个平行光作为光源
     const light = new THREE.DirectionalLight(0xffffff, 1)
-    light.position.set(500, 1000, 200)
+    light.position.set(-50, 1000, 200)
     light.castShadow = true // 开启光源的阴影投射
     scene.add(light)
 
     // 照相机位置
     camera.position.set(250, 1000, 250)
-
+    camera.lookAt(250, 1000, 250)
+    camera.updateProjectionMatrix()
 
     // 模型加载
-    // const loader = new GLTFLoader()
-    // loader.load(
-    //   '/src/model/boston0220_keep07.glb',
-    //   function (gltf) {
-    //     const model = gltf.scene
-    //     model.scale.set(0.05, 0.05, 0.05) // 设置为原始大小0.05
-    //       ;[1, 2, 3].forEach((t) => {
-    //         let k = model.clone()
-    //         
-    //         k.position.set(t * 2, 0, 0)
-    //         scene.add(k)
-    //       })
-    //     loop()
-    //   },
-    //   undefined,
-    //   function (error) {
-    //     console.error(error)
-    //   }
-    // )
+    const loader = new GLTFLoader()
+    loader.load(
+      '/src/model/residential_building_with_parking_lot.glb',
+      function (gltf) {
+        const model = gltf.scene
+        model.scale.set(0.02, 0.02, 0.02) // 设置为原始大小0.05
+        // model.scale.set(10, 10, 10) // 设置为原始大小0.05
+        coordinateList.forEach((t, index) => {
+          let k = model.clone()
+          k.traverse(c => {
+            if (index == 1 && c.outline) {
+              c.outline.visible = true;
+            }
+            if (c.isMesh) {
+              c.userData.isHouse = true;
+              // 为每个子网格设置 userData 属性
+              c.userData.$id = index;
+            }
+          })
+          k.position.set(t.x, 0, t.y)
+          scene.add(k)
+        })
+        loop()
+      },
+      undefined,
+      function (error) {
+        console.error(error)
+      }
+    )
 
 
 
@@ -105,7 +143,13 @@ export const useThree = () => {
       // raycaster.firstHitOnly = true;
 
       // 计算物体和射线的焦点
-      const houseModels = scene.children.filter(m => m.userData?.isHouse)
+      const houseModels = []
+      scene.children.forEach(k => {
+        k.traverse(function (o) {
+          if (o.isMesh) houseModels.push(o)
+        });
+      })
+      // const houseModels = scene.children.filter(m => m.userData?.isHouse)
       const intersects = raycaster.intersectObjects(houseModels, true);
       // 只会去第一个焦点即可
       let object = intersects[0]?.object
@@ -113,14 +157,14 @@ export const useThree = () => {
       // 清理其他选中效果
       houseModels.forEach(k => {
         k.traverse(function (o) {
-          if (o.isMesh) {
-            o.material.color = o.userData.color.clone()
+          if (o.isMesh && o.material.color) {
+            o.material.color = o.userData.color?.clone()
           }
         });
       })
       if (!object.userData.isChecked) {
         object.userData.isChecked = true
-        object.material.color.set(0xff0000);
+        object.material.color?.set(0xff0000);
         console.log(`你选中了厂房 ${object.userData.$id}`);
         dataDialogRef.value.show(object.userData.$id)
       } else {
