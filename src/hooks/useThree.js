@@ -28,22 +28,6 @@ export const useThree = () => {
     //将坐标轴添加进场景
     scene.add(axes)
 
-    // 创建几何体
-    // const boxGeometry = new THREE.BoxGeometry(250, 250, 250)
-    // const boxMaterial = new THREE.MeshStandardMaterial({ color: '#ffffff' })
-    // coordinateList.forEach((t, index) => {
-    //   const cube = new THREE.Mesh(boxGeometry, boxMaterial)
-    //   cube.userData.isHouse = true;
-    //   // 为每个子网格设置 userData 属性
-    //   cube.userData.$id = index;
-    //   cube.userData.color = cube.material.color.clone()
-    //   cube.material = cube.material.clone()
-
-    //   cube.position.set(t.x, 125, t.y)
-    //   scene.add(cube)
-    // })
-
-
     // 创建一个平面作为地面
     const texture = new THREE.TextureLoader().load('src/assets/group.jpg', () => {
       texture.wrapS = THREE.RepeatWrapping;
@@ -63,9 +47,8 @@ export const useThree = () => {
     ground.receiveShadow = true; // 开启地面的阴影接收
     scene.add(ground);
 
-
     // 雾气
-    scene.fog = new THREE.FogExp2('#879cba', 0.002);
+    scene.fog = new THREE.FogExp2('#879cba', 0.001);
 
     // 创建环境
     const rgbeLoader = new RGBELoader()
@@ -76,14 +59,6 @@ export const useThree = () => {
       scene.environment = texture
     })
 
-    // const sg = new THREE.SphereGeometry(1000, 60, 60)
-    // sg.scale(1, 1, -1)
-    // const sm = new THREE.MeshBasicMaterial({
-    //   map: new THREE.TextureLoader().load("/src/assets/HdrSky.hdr")
-    // })
-    // const sky = new THREE.Mesh(sg, sm)
-    // scene.add(sky)
-
 
     // 创建一个平行光作为光源
     const light = new THREE.DirectionalLight(0xffffff, 1)
@@ -92,8 +67,8 @@ export const useThree = () => {
     scene.add(light)
 
     // 照相机位置
-    camera.position.set(250, 1000, 250)
-    camera.lookAt(250, 1000, 250)
+    camera.position.set(-220, 400, 380)
+    camera.lookAt(0, 0, 0)
     camera.updateProjectionMatrix()
 
     // 模型加载
@@ -107,10 +82,7 @@ export const useThree = () => {
         coordinateList.forEach((t, index) => {
           let k = model.clone()
           k.traverse(c => {
-            if (index == 1 && c.outline) {
-              c.outline.visible = true;
-            }
-            if (c.isMesh) {
+            if (c.userData?.name == "building_texture_1_0") {
               c.userData.isHouse = true;
               // 为每个子网格设置 userData 属性
               c.userData.$id = index;
@@ -146,7 +118,7 @@ export const useThree = () => {
       const houseModels = []
       scene.children.forEach(k => {
         k.traverse(function (o) {
-          if (o.isMesh) houseModels.push(o)
+          if (o.userData?.isHouse) houseModels.push(o)
         });
       })
       // const houseModels = scene.children.filter(m => m.userData?.isHouse)
@@ -155,15 +127,13 @@ export const useThree = () => {
       let object = intersects[0]?.object
       if (!object) return
       // 清理其他选中效果
-      houseModels.forEach(k => {
-        k.traverse(function (o) {
-          if (o.isMesh && o.material.color) {
-            o.material.color = o.userData.color?.clone()
-          }
-        });
+      houseModels.forEach(o => {
+        o.material.color = o.userData.color?.clone()
       })
       if (!object.userData.isChecked) {
         object.userData.isChecked = true
+        object.material.opacity = 0.5
+
         object.material.color?.set(0xff0000);
         console.log(`你选中了厂房 ${object.userData.$id}`);
         dataDialogRef.value.show(object.userData.$id)

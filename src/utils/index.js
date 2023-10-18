@@ -26,14 +26,8 @@ function generateQuadrantCollection(minx, maxx, miny, maxy) {
 //   { x: -25, y: -25 },
 // ]
 const coordinateList = [
-  { x: 125, y: 250 },
-  { x: 125, y: 125 },
-  { x: 125, y: -125 },
-  { x: 125, y: -250 },
-  { x: -125, y: 125 },
-  { x: -125, y: 250 },
-  { x: -125, y: -125 },
-  { x: -125, y: -250 },
+  { x: 125, y: 0 },
+  { x: -125, y: 0 },
 ]
 
 export { generateQuadrantCollection, coordinateList }

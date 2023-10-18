@@ -7,7 +7,7 @@ export const useInit = () => {
   const title = ref('')
 
   const show = (id) => {
-    ElMessage.info(`你选中了厂房 ${id}`)
+    // ElMessage.info(`你选中了厂房 ${id}`)
     title.value = `厂房 ${id}数据概览`
     visible.value = true
   }
