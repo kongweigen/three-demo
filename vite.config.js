@@ -4,6 +4,8 @@ import path from 'path'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  assetsDir: '/three-demo',
+  base: '/three-demo',
   plugins: [vue()],
   resolve: {
     alias: {
